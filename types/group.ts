@@ -1,3 +1,5 @@
+export type Category = "coffee" | "alcohol" | "food";
+
 export type GroupMember = {
   id: string;
   initial: string;
