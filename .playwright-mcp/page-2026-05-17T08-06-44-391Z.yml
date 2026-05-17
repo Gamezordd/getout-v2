@@ -1,0 +1,94 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button [ref=e7] [cursor=pointer]:
+            - img [ref=e8]
+          - generic [ref=e10]:
+            - generic [ref=e11]: Bars tonight 🥂
+            - generic [ref=e12]: Bengaluru · 24 venues
+          - generic [ref=e13]:
+            - button [ref=e14] [cursor=pointer]:
+              - img [ref=e15]
+            - generic [ref=e20]:
+              - generic [ref=e21]: R
+              - generic [ref=e22]: P
+              - generic [ref=e23]: A
+              - generic [ref=e24]: "+2"
+        - generic [ref=e25] [cursor=pointer]:
+          - img [ref=e26]
+          - generic [ref=e29]: Mahatma Gandhi Rd, Bengaluru
+          - generic [ref=e30]: Change
+        - generic [ref=e31]:
+          - paragraph [ref=e33]:
+            - strong [ref=e34]: 3 people
+            - text: deciding ·
+            - strong [ref=e35]: 2 pinned
+          - generic [ref=e36]:
+            - generic [ref=e37]: R
+            - generic [ref=e38]: P
+            - generic [ref=e39]: A
+      - generic [ref=e40]:
+        - button "Shortlist 2" [ref=e41] [cursor=pointer]:
+          - text: Shortlist
+          - generic [ref=e42]: "2"
+        - button "Explore" [ref=e43] [cursor=pointer]
+      - generic [ref=e45]:
+        - generic [ref=e47]:
+          - img [ref=e48]
+          - textbox "Search a place to pin…" [ref=e51]
+          - generic [ref=e52]: ↵ to pin
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e55]: Pinned for a vote
+            - button "Clear all" [ref=e56] [cursor=pointer]
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - img "Communiti" [ref=e60]
+              - generic [ref=e61]: "1"
+            - generic [ref=e62]:
+              - generic [ref=e63]: Communiti
+              - generic [ref=e64]:
+                - generic [ref=e65]:
+                  - img [ref=e66]
+                  - text: 5 min
+                - generic [ref=e69]: Gastropub · Ashok Nagar · ★ 4.4
+              - generic [ref=e70]:
+                - generic [ref=e71]: A
+                - generic [ref=e72]: Pinned by you
+            - generic [ref=e73]:
+              - button [ref=e74] [cursor=pointer]:
+                - img [ref=e75]
+              - button "Voted" [active] [ref=e109] [cursor=pointer]:
+                - img [ref=e110]
+                - text: Voted
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - img "Pangeo" [ref=e83]
+              - generic [ref=e84]: "2"
+            - generic [ref=e85]:
+              - generic [ref=e86]: Pangeo
+              - generic [ref=e87]:
+                - generic [ref=e88]:
+                  - img [ref=e89]
+                  - text: 3 min
+                - generic [ref=e92]: Rooftop · Brigade Rd · ★ 4.5
+              - generic [ref=e93]:
+                - generic [ref=e94]: R
+                - generic [ref=e95]: Pinned by Ravi
+            - generic [ref=e96]:
+              - button [ref=e97] [cursor=pointer]:
+                - img [ref=e98]
+              - button "Vote" [ref=e100] [cursor=pointer]
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic [ref=e104]: Leading · 2 votes
+            - generic [ref=e105]: Communiti
+            - generic [ref=e106]: Tap to lock in and end voting
+          - button "Lock in 🎯" [ref=e107] [cursor=pointer]
+    - region "Notifications alt+T":
+      - list:
+        - listitem [ref=e112]:
+          - generic [ref=e114]: Voted for Communiti!
+  - alert [ref=e108]

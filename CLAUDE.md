@@ -1,7 +1,9 @@
 # getout-v2 — Claude Code Rules
 
 ## Project
-A revamp of a group decision voting app. Users create groups, propose options, and vote collaboratively. Built with Next.js 14 (Pages Router), TypeScript, Tailwind CSS, MobX, NeonDB (Postgres via serverless), Upstash Redis, Pusher (realtime), Firebase (auth), and Mapbox.
+A revamp of a group decision voting app (@../getout/*). Users create groups, propose options, and vote collaboratively. Built with Next.js 14 (Pages Router), TypeScript, Tailwind CSS, MobX, NeonDB (Postgres via serverless), Upstash Redis, Pusher (realtime), Firebase (auth), and Mapbox.
+
+The old app is for reference only and does not follow our code rules. We use the constants from it and rebuild the logic according to the new rules described here.
 
 ---
 
