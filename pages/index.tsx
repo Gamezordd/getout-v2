@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { CATEGORY_META } from "@/lib/demoPlaces";
+import { getStoredPreciseLocation } from "@/lib/location/browser";
 import type { Category } from "@/types/group";
 
 const CATEGORIES: Category[] = ["coffee", "alcohol", "food"];
@@ -16,10 +17,14 @@ export default function HomePage() {
       const res = await fetch("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category }),
+        body: JSON.stringify({
+          category,
+          preciseLocation: getStoredPreciseLocation(),
+        }),
       });
       if (!res.ok) throw new Error("Failed");
-      const { slug } = await res.json();
+      const { data } = (await res.json()) as { data: { slug: string } };
+      const { slug } = data;
       await router.push(`/${slug}`);
     } catch {
       setLoading(null);

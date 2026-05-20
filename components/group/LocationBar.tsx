@@ -1,9 +1,14 @@
 type Props = {
   location: string;
   onChange: () => void;
+  actionLabel?: string;
 };
 
-export default function LocationBar({ location, onChange }: Props) {
+export default function LocationBar({
+  location,
+  onChange,
+  actionLabel = "Use precise",
+}: Props) {
   return (
     <div
       onClick={onChange}
@@ -14,7 +19,7 @@ export default function LocationBar({ location, onChange }: Props) {
         <circle cx="7" cy="5" r="1.5" fill="#00e5a0" />
       </svg>
       <span className="flex-1 text-[12px] font-medium text-ink truncate">{location}</span>
-      <span className="text-[11px] font-semibold text-accent flex-shrink-0">Change</span>
+      <span className="text-[11px] font-semibold text-accent flex-shrink-0">{actionLabel}</span>
     </div>
   );
 }

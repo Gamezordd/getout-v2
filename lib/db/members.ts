@@ -52,6 +52,19 @@ export async function getMembers(groupId: string): Promise<MemberRow[]> {
   return rows.map(toRow);
 }
 
+export async function getMemberByBrowserId(
+  groupId: string,
+  browserId: string,
+): Promise<MemberRow | null> {
+  await ensureSchema();
+  const sql = getSql();
+  const rows = await sql`
+    SELECT id, group_id, browser_id, color, label FROM group_members_v2
+    WHERE group_id = ${groupId} AND browser_id = ${browserId} LIMIT 1
+  ` as MemberDbRow[];
+  return rows[0] ? toRow(rows[0]) : null;
+}
+
 export function toPublicMember(member: MemberRow, currentBrowserId: string): MemberPublic {
   return { id: member.id, color: member.color, label: member.label, isMe: member.browserId === currentBrowserId };
 }

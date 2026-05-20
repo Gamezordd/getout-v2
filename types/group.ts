@@ -1,3 +1,6 @@
+import type { Coordinates } from "./location";
+import type { MemberTravel } from "./travel";
+
 export type Category = "coffee" | "alcohol" | "food";
 
 export type GroupMember = {
@@ -15,6 +18,7 @@ export type Place = {
   distance: string;
   rating: string;
   imageUrl: string;
+  coordinates?: Coordinates;
 };
 
 export type PinnedPlace = {
@@ -22,6 +26,7 @@ export type PinnedPlace = {
   rank: number;
   votePercent: number;
   pinnedBy: GroupMember;
+  memberTravel?: MemberTravel[];
 };
 
 export type GroupSession = {

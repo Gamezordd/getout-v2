@@ -5,14 +5,19 @@ import LocationBar from "@/components/group/LocationBar";
 import LiveBar from "@/components/group/LiveBar";
 import TabBar, { type Tab } from "@/components/group/TabBar";
 import ShortlistPage from "@/components/group/shortlist/ShortlistPage";
+import ExplorePage from "@/components/group/explore/ExplorePage";
 import { toast } from "sonner";
-import type { GroupSession } from "@/types/group";
+import type { GroupSession, GroupMember } from "@/types/group";
+import type { Coordinates } from "@/types/location";
 
-type Props = { session: GroupSession };
+type Props = { session: GroupSession; centroid: Coordinates };
 
-export default function GroupPage({ session }: Props) {
+export default function GroupPage({ session, centroid }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("shortlist");
   const [pinnedCount, setPinnedCount] = useState(session.pinnedPlaces.length);
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(
+    new Set(session.pinnedPlaces.map((p) => p.place.id)),
+  );
   const [headerHidden, setHeaderHidden] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -48,15 +53,21 @@ export default function GroupPage({ session }: Props) {
       <div className="flex-1 overflow-hidden flex flex-col">
         {activeTab === "shortlist" && (
           <ShortlistPage
+            category="alcohol"
             session={session}
             onPinnedCountChange={setPinnedCount}
             onScroll={(hide) => setHeaderHidden(hide)}
           />
         )}
         {activeTab === "explore" && (
-          <div className="flex-1 flex items-center justify-center text-muted text-[13px]">
-            Explore — coming soon
-          </div>
+          <ExplorePage
+            session={session}
+            centroid={centroid}
+            pinnedIds={pinnedIds}
+            onPin={(_placeId: string, _pinnedBy: GroupMember) => {
+              setPinnedIds((prev) => new Set([...prev, _placeId]));
+            }}
+          />
         )}
       </div>
     </div>
@@ -70,6 +81,7 @@ export const getStaticPaths: GetStaticPaths = async () => ({
 
 export const getStaticProps: GetStaticProps<Props> = async () => ({
   props: {
+    centroid: { lat: 12.9716, lng: 77.5946 },
     session: {
       id: "demo",
       name: "Bars tonight 🥂",

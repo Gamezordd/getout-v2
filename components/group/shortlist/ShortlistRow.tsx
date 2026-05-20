@@ -1,5 +1,7 @@
+import { useState } from "react";
 import Avatar from "@/components/ui/Avatar";
 import type { GroupMember, Place } from "@/types/group";
+import type { MemberTravel } from "@/types/travel";
 
 type Props = {
   place: Place;
@@ -8,18 +10,148 @@ type Props = {
   isVoted: boolean;
   votePercent: number;
   pinnedBy: GroupMember;
+  members: GroupMember[];
+  memberTravel?: MemberTravel[];
   onVote: () => void;
   onUnpin: () => void;
   style?: React.CSSProperties;
 };
 
-export default function ShortlistRow({ place, rank, isLeader, isVoted, votePercent, pinnedBy, onVote, onUnpin, style }: Props) {
+type Speed = "fast" | "yellow" | "mid" | "slow";
+
+function classifySpeed(seconds: number): Speed {
+  const mins = seconds / 60;
+  if (mins < 20) return "fast";
+  if (mins < 45) return "yellow";
+  if (mins < 60) return "mid";
+  return "slow";
+}
+
+function formatDuration(seconds: number): string {
+  const totalMins = Math.round(seconds / 60);
+  if (totalMins < 60) return `${totalMins}m`;
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+const SPEED_RING: Record<Speed, string> = {
+  fast: "ring-[1.5px] ring-accent",
+  yellow: "ring-[1.5px] ring-yellow-400",
+  mid: "ring-[1.5px] ring-amber-500",
+  slow: "ring-[1.5px] ring-red-500",
+};
+
+const SPEED_TEXT: Record<Speed, string> = {
+  fast: "text-accent",
+  yellow: "text-yellow-400",
+  mid: "text-amber-500",
+  slow: "text-red-500",
+};
+
+type TravelChip = {
+  member: GroupMember;
+  seconds: number;
+  speed: Speed;
+  isYou: boolean;
+};
+
+function buildChips(memberTravel: MemberTravel[], members: GroupMember[]): TravelChip[] {
+  const memberMap = new Map(members.map((m) => [m.id, m]));
+  const chips: TravelChip[] = [];
+
+  for (const t of memberTravel) {
+    const member = memberMap.get(t.memberId);
+    if (!member) continue;
+    chips.push({
+      member,
+      seconds: t.durationSeconds,
+      speed: classifySpeed(t.durationSeconds),
+      isYou: member.name === "You",
+    });
+  }
+
+  return chips.sort((a, b) => {
+    if (a.isYou !== b.isYou) return a.isYou ? -1 : 1;
+    return b.seconds - a.seconds;
+  });
+}
+
+type TravelStripProps = {
+  memberTravel: MemberTravel[];
+  members: GroupMember[];
+};
+
+function TravelStrip({ memberTravel, members }: TravelStripProps) {
+  const [expanded, setExpanded] = useState(false);
+  const chips = buildChips(memberTravel, members);
+  if (chips.length === 0) return null;
+
+  const sorted = [...chips].sort((a, b) => a.seconds - b.seconds);
+  const minLabel = formatDuration(sorted[0].seconds);
+  const maxLabel = formatDuration(sorted[sorted.length - 1].seconds);
+  const rangeLabel = minLabel === maxLabel ? minLabel : `${minLabel}–${maxLabel}`;
+
+  const visible = chips.slice(0, 3);
+  const overflow = chips.slice(3);
+  const showOverflow = expanded ? overflow : [];
+  const overflowCount = overflow.length;
+
+  return (
+    <div className="mt-[2px] mx-[13px] mb-1 pt-[8px] border-t border-white/[0.07]">
+      <div className="flex items-center justify-between mb-[7px]">
+        <div className="flex items-center gap-[5px] text-[11px] font-semibold text-muted">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M1.5 8.5h1M9.5 8.5h1M2 5.5l.8-2.5h6.4l.8 2.5H2zM1.5 5.5h9v3H1.5v-3z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Travel times
+        </div>
+        <span className="font-syne text-[11px] font-bold text-ink">{rangeLabel}</span>
+      </div>
+
+      <div className="flex items-start gap-[8px] flex-wrap">
+        {visible.map((chip) => (
+          <TravelChipItem key={chip.member.id} chip={chip} />
+        ))}
+        {showOverflow.map((chip) => (
+          <TravelChipItem key={chip.member.id} chip={chip} />
+        ))}
+        {!expanded && overflowCount > 0 && (
+          <button
+            onClick={() => setExpanded(true)}
+            className="flex flex-col items-center gap-[2px] min-w-[28px]"
+          >
+            <div className="w-7 h-7 rounded-full bg-surface-2 border border-white/[0.12] flex items-center justify-center text-[9px] font-bold text-muted">
+              +{overflowCount}
+            </div>
+            <span className="text-[9px] text-muted">more</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TravelChipItem({ chip }: { chip: TravelChip }) {
+  return (
+    <div className="flex flex-col items-center gap-[2px] min-w-[28px]">
+      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${SPEED_RING[chip.speed]}`}
+        style={{ background: chip.member.color, color: chip.member.textColor ?? "#fff" }}
+      >
+        {chip.member.initial}
+      </div>
+      <span className={`text-[9px] font-semibold ${SPEED_TEXT[chip.speed]}`}>{formatDuration(chip.seconds)}</span>
+    </div>
+  );
+}
+
+export default function ShortlistRow({ place, rank, isLeader, isVoted, votePercent, pinnedBy, members, memberTravel, onVote, onUnpin, style }: Props) {
   return (
     <div style={style} className="animate-slide-up">
       <div
-        className={`flex items-center gap-[11px] px-[13px] py-[10px] bg-surface rounded-[14px] mb-1 border ${
+        className={`flex items-center gap-[11px] px-[13px] py-[10px] bg-surface rounded-t-[14px] border-x border-t ${
           isLeader ? "border-accent/[0.28]" : "border-white/[0.07]"
-        }`}
+        } ${memberTravel && memberTravel.length > 0 ? "" : "rounded-b-[14px] border-b mb-1"}`}
       >
         <div className="w-11 h-11 rounded-[11px] overflow-hidden flex-shrink-0 bg-surface-2 relative">
           <img src={place.imageUrl} alt={place.name} className="w-full h-full object-cover brightness-75" />
@@ -78,6 +210,12 @@ export default function ShortlistRow({ place, rank, isLeader, isVoted, votePerce
           </button>
         </div>
       </div>
+
+      {memberTravel && memberTravel.length > 0 && (
+        <div className={`bg-surface border-x border-b rounded-b-[14px] mb-1 ${isLeader ? "border-accent/[0.28]" : "border-white/[0.07]"}`}>
+          <TravelStrip memberTravel={memberTravel} members={members} />
+        </div>
+      )}
 
       <div className="h-[3px] bg-surface-2 rounded-[2px] overflow-hidden mx-[13px] mb-1">
         <div
