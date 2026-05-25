@@ -7,4 +7,5 @@ export function groupChannel(groupId: string): string {
 export const EVENTS = {
   PINS_UPDATED: "pins-updated",
   PLACE_IMAGES_READY: "place-images-ready",
+  PLACE_VIBES_READY: "place-vibes-ready",
 } as const;
