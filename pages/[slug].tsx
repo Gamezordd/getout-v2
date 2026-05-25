@@ -164,11 +164,11 @@ export default function GroupSlugPage({
       <TabBar
         active={activeTab}
         shortlistCount={pinnedCount}
-        onChange={setActiveTab}
+        onChange={(tab) => { setActiveTab(tab); setHeaderHidden(false); }}
       />
 
       <div className="flex-1 overflow-hidden flex flex-col">
-        {activeTab === "shortlist" && (
+        <div className={`flex-1 overflow-hidden flex flex-col ${activeTab !== "shortlist" ? "hidden" : ""}`}>
           <ShortlistPage
             category={category}
             session={session}
@@ -176,17 +176,20 @@ export default function GroupSlugPage({
             onPinnedIdsChange={setPinnedIds}
             onScroll={setHeaderHidden}
           />
-        )}
-        {activeTab === "explore" && (
+        </div>
+        <div className={`flex-1 overflow-hidden flex flex-col ${activeTab !== "explore" ? "hidden" : ""}`}>
           <ExplorePage
             session={session}
             centroid={locationState.centroid?.coordinates ?? { lat: 12.9716, lng: 77.5946 }}
+            category={category}
+            cityKey={locationState.centroid?.city ?? ""}
             pinnedIds={pinnedIds}
             onPin={(placeId: string, _pinnedBy: GroupMember) => {
               setPinnedIds((prev) => new Set([...prev, placeId]));
             }}
+            onScroll={setHeaderHidden}
           />
-        )}
+        </div>
       </div>
     </div>
   );

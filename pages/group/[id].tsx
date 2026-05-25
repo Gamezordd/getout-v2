@@ -48,27 +48,34 @@ export default function GroupPage({ session, centroid }: Props) {
         />
       </div>
 
-      <TabBar active={activeTab} shortlistCount={pinnedCount} onChange={setActiveTab} />
+      <TabBar
+        active={activeTab}
+        shortlistCount={pinnedCount}
+        onChange={(tab) => { setActiveTab(tab); setHeaderHidden(false); }}
+      />
 
       <div className="flex-1 overflow-hidden flex flex-col">
-        {activeTab === "shortlist" && (
+        <div className={`flex-1 overflow-hidden flex flex-col ${activeTab !== "shortlist" ? "hidden" : ""}`}>
           <ShortlistPage
             category="alcohol"
             session={session}
             onPinnedCountChange={setPinnedCount}
             onScroll={(hide) => setHeaderHidden(hide)}
           />
-        )}
-        {activeTab === "explore" && (
+        </div>
+        <div className={`flex-1 overflow-hidden flex flex-col ${activeTab !== "explore" ? "hidden" : ""}`}>
           <ExplorePage
             session={session}
             centroid={centroid}
+            category="alcohol"
+            cityKey="bengaluru"
             pinnedIds={pinnedIds}
             onPin={(_placeId: string, _pinnedBy: GroupMember) => {
               setPinnedIds((prev) => new Set([...prev, _placeId]));
             }}
+            onScroll={setHeaderHidden}
           />
-        )}
+        </div>
       </div>
     </div>
   );

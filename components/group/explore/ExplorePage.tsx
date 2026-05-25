@@ -1,31 +1,41 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { observer } from "mobx-react-lite";
 import { toast } from "sonner";
 import PlaceDetail from "./PlaceDetail";
+import VibeSearch from "./VibeSearch";
 
 const ExploreMap = dynamic(() => import("./ExploreMap"), { ssr: false, loading: () => <div className="flex-1 bg-[#181e2c]" /> });
 import { ExploreStore } from "@/stores/ExploreStore";
 import { getPusherClient } from "@/lib/pusher/client";
 import { groupChannel, EVENTS } from "@/lib/pusher/events";
-import type { GroupSession, GroupMember } from "@/types/group";
+import type { GroupSession, GroupMember, Place } from "@/types/group";
 import type { Coordinates } from "@/types/location";
 import type { PlacePhoto } from "@/types/explore";
 
 type Props = {
   session: GroupSession;
   centroid: Coordinates;
+  category: string;
+  cityKey: string;
   pinnedIds: Set<string>;
   onPin: (placeId: string, pinnedBy: GroupMember) => void;
+  onScroll?: (hide: boolean) => void;
 };
 
 type PlaceImagesReadyPayload = {
   updates: Array<{ placeId: string; photos: PlacePhoto[] }>;
 };
 
-const ExplorePage = observer(function ExplorePage({ session, centroid, pinnedIds, onPin }: Props) {
+const ExplorePage = observer(function ExplorePage({ session, centroid, category, cityKey, pinnedIds, onPin, onScroll }: Props) {
   const store = useMemo(() => new ExploreStore(), []);
   const [mode, setMode] = useState<"map" | "vibe">("map");
+  const onScrollRef = useRef(onScroll);
+  onScrollRef.current = onScroll;
+
+  useEffect(() => {
+    if (mode === "map") onScrollRef.current?.(false);
+  }, [mode]);
 
   useEffect(() => {
     let channel: ReturnType<ReturnType<typeof getPusherClient>["subscribe"]> | null = null;
@@ -48,6 +58,8 @@ const ExplorePage = observer(function ExplorePage({ session, centroid, pinnedIds
     };
   }, [session.id, store]);
 
+  const me = session.members.find((m) => m.name === "You") ?? session.members[0];
+
   async function handlePin(placeId: string) {
     const place = store.places.get(placeId);
     if (!place) return;
@@ -55,7 +67,6 @@ const ExplorePage = observer(function ExplorePage({ session, centroid, pinnedIds
       toast("Already on the shortlist");
       return;
     }
-    const me = session.members.find((m) => m.name === "You") ?? session.members[0];
     try {
       await fetch(`/api/groups/${session.id}/pins`, {
         method: "POST",
@@ -63,6 +74,21 @@ const ExplorePage = observer(function ExplorePage({ session, centroid, pinnedIds
         body: JSON.stringify({ place, pinnedBy: me }),
       });
       onPin(placeId, me);
+      toast(`📌 ${place.name} added to shortlist!`);
+    } catch {
+      toast("Failed to pin place");
+    }
+  }
+
+  async function handleVibePin(place: Place) {
+    if (pinnedIds.has(place.id)) return;
+    try {
+      await fetch(`/api/groups/${session.id}/pins`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ place, pinnedBy: me }),
+      });
+      onPin(place.id, me);
       toast(`📌 ${place.name} added to shortlist!`);
     } catch {
       toast("Failed to pin place");
@@ -93,30 +119,33 @@ const ExplorePage = observer(function ExplorePage({ session, centroid, pinnedIds
         ))}
       </div>
 
-      {mode === "map" && (
-        <div className="absolute inset-0 flex flex-col">
-          <ExploreMap
-            store={store}
-            groupId={session.id}
-            centroid={centroid}
-            pinnedIds={pinnedIds}
-          />
-          <PlaceDetail
-            store={store}
-            session={session}
-            pinnedIds={pinnedIds}
-            onPin={handlePin}
-            onClose={() => store.setSelectedPlace(null)}
-          />
-        </div>
-      )}
+      <div className={`absolute inset-0 flex flex-col ${mode !== "map" ? "hidden" : ""}`}>
+        <ExploreMap
+          store={store}
+          groupId={session.id}
+          centroid={centroid}
+          pinnedIds={pinnedIds}
+        />
+        <PlaceDetail
+          store={store}
+          session={session}
+          pinnedIds={pinnedIds}
+          onPin={handlePin}
+          onClose={() => store.setSelectedPlace(null)}
+        />
+      </div>
 
-      {mode === "vibe" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-muted text-[13px] px-9 text-center">
-          <div className="text-[32px] mb-3 opacity-50">✦</div>
-          <p>Vibe search coming soon</p>
-        </div>
-      )}
+      <div className={`absolute inset-0 overflow-hidden ${mode !== "vibe" ? "hidden" : ""}`}>
+        <VibeSearch
+          groupId={session.id}
+          cityKey={cityKey}
+          category={category}
+          members={session.members}
+          pinnedIds={pinnedIds}
+          onPin={handleVibePin}
+          onScroll={onScroll}
+        />
+      </div>
     </div>
   );
 });
