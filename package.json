@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "clear-place-vibes": "node scripts/clear-place-vibes.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",
