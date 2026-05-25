@@ -4,6 +4,7 @@ import ShortlistSearch from "./ShortlistSearch";
 import ShortlistRow from "./ShortlistRow";
 import FinalizeBar from "./FinalizeBar";
 import type { Category, GroupSession, PinnedPlace, Place } from "@/types/group";
+import type { PlaceImagesPayload, PlaceVibesPayload, VibeTag } from "@/types/explore";
 import { getPusherClient } from "@/lib/pusher/client";
 import { groupChannel, EVENTS } from "@/lib/pusher/events";
 
@@ -30,6 +31,8 @@ export default function ShortlistPage({
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const lastScrollY = useRef(0);
+  const [imagesByPlaceId, setImagesByPlaceId] = useState<Map<string, string[]>>(new Map());
+  const [vibesByPlaceId, setVibesByPlaceId] = useState<Map<string, VibeTag[]>>(new Map());
 
   const pinnedIds = new Set(pinned.map((p) => p.place.id));
   const leader =
@@ -58,16 +61,34 @@ export default function ShortlistPage({
 
   useEffect(() => {
     let channel: ReturnType<ReturnType<typeof getPusherClient>["subscribe"]> | null = null;
+    const imageHandler = (p: { updates: Array<{ placeId: string; photos: Array<{ url: string }> }> }) =>
+      setImagesByPlaceId((prev) => {
+        const m = new Map(prev);
+        for (const { placeId, photos } of p.updates)
+          if (photos.length > 0 && !prev.has(placeId)) m.set(placeId, photos.map((p) => p.url));
+        return m;
+      });
+    const vibeHandler = (p: { updates: Array<{ placeId: string; tags: VibeTag[] }> }) =>
+      setVibesByPlaceId((prev) => {
+        const m = new Map(prev);
+        for (const { placeId, tags } of p.updates)
+          if (tags.length > 0 && !prev.has(placeId)) m.set(placeId, tags);
+        return m;
+      });
     try {
       const pusher = getPusherClient();
       channel = pusher.subscribe(groupChannel(session.id));
       channel.bind(EVENTS.PINS_UPDATED, fetchPins);
+      channel.bind(EVENTS.PLACE_IMAGES_READY, imageHandler);
+      channel.bind(EVENTS.PLACE_VIBES_READY, vibeHandler);
     } catch {
       // Pusher not configured — live sync unavailable
     }
     return () => {
       if (channel) {
         channel.unbind(EVENTS.PINS_UPDATED, fetchPins);
+        channel.unbind(EVENTS.PLACE_IMAGES_READY, imageHandler);
+        channel.unbind(EVENTS.PLACE_VIBES_READY, vibeHandler);
         channel.unsubscribe();
       }
     };
@@ -77,6 +98,34 @@ export default function ShortlistPage({
     onPinnedCountChange?.(pinned.length);
     onPinnedIdsChange?.(new Set(pinned.map((p) => p.place.id)));
   }, [onPinnedCountChange, onPinnedIdsChange, pinned]);
+
+  useEffect(() => {
+    if (pinned.length === 0) return;
+    const ids = pinned.map((p) => p.place.id);
+    const places = pinned.map((p) => ({ id: p.place.id, name: p.place.name }));
+    fetch(`/api/groups/${session.id}/place-images`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ placeIds: ids }),
+    }).then((r) => r.json()).then((d: { data?: PlaceImagesPayload }) => {
+      setImagesByPlaceId((prev) => {
+        const m = new Map(prev);
+        for (const [id, v] of Object.entries(d.data ?? {}))
+          if (Array.isArray(v) && v.length > 0) m.set(id, (v as Array<{ url: string }>).map((p) => p.url));
+        return m;
+      });
+    }).catch(() => undefined);
+    fetch(`/api/groups/${session.id}/place-vibes`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ places }),
+    }).then((r) => r.json()).then((d: { data?: PlaceVibesPayload }) => {
+      setVibesByPlaceId((prev) => {
+        const m = new Map(prev);
+        for (const [id, v] of Object.entries(d.data ?? {}))
+          if (Array.isArray(v)) m.set(id, v as VibeTag[]);
+        return m;
+      });
+    }).catch(() => undefined);
+  }, [pinned, session.id]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -210,6 +259,8 @@ export default function ShortlistPage({
               pinnedBy={item.pinnedBy}
               members={session.members}
               memberTravel={item.memberTravel}
+              images={imagesByPlaceId.get(item.place.id)}
+              vibeTags={vibesByPlaceId.get(item.place.id)}
               onVote={() => handleVote(item.place.id)}
               onUnpin={() => handleUnpin(item.place.id)}
               style={{ animationDelay: `${(item.rank - 1) * 0.07}s` }}

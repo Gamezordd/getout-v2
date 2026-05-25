@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Avatar from "@/components/ui/Avatar";
 import type { GroupMember, Place } from "@/types/group";
 import type { MemberTravel } from "@/types/travel";
+import type { VibeTag } from "@/types/explore";
 
 type Props = {
   place: Place;
@@ -12,6 +13,9 @@ type Props = {
   pinnedBy: GroupMember;
   members: GroupMember[];
   memberTravel?: MemberTravel[];
+  images?: string[];
+  vibeTags?: VibeTag[];
+  autoplay?: boolean;
   onVote: () => void;
   onUnpin: () => void;
   style?: React.CSSProperties;
@@ -145,16 +149,81 @@ function TravelChipItem({ chip }: { chip: TravelChip }) {
   );
 }
 
-export default function ShortlistRow({ place, rank, isLeader, isVoted, votePercent, pinnedBy, members, memberTravel, onVote, onUnpin, style }: Props) {
+function PhotoStrip({ images, activeIdx, onSelect, borderColor, isLast, autoplay }: {
+  images: string[]; activeIdx: number; onSelect: (i: number) => void;
+  borderColor: string; isLast: boolean; autoplay: boolean;
+}) {
+  const stripRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    if (!autoplay) return;
+    const strip = stripRef.current;
+    const btn = btnRefs.current[activeIdx];
+    if (!strip || !btn) return;
+    const target = btn.offsetLeft - (strip.clientWidth - btn.clientWidth) / 2;
+    strip.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  }, [activeIdx, autoplay]);
+
+  return (
+    <div ref={stripRef} className={`flex gap-2 overflow-x-auto bg-surface border-x px-3 pt-2 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${borderColor} ${isLast ? "border-b rounded-b-[14px] mb-1" : ""}`}>
+      {images.map((url, i) => (
+        <button key={i} type="button" ref={(el) => { btnRefs.current[i] = el; }} onClick={() => onSelect(i)}
+          className={`shrink-0 h-[88px] w-[120px] rounded-[10px] overflow-hidden border-2 transition-colors ${autoplay && i === activeIdx ? "border-accent" : "border-transparent"}`}
+        >
+          <img src={url} className="h-full w-full object-cover" loading="lazy" alt="" />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const CHIP_PALETTES = [
+  { border: "rgba(0,229,160,0.30)",  bg: "rgba(0,229,160,0.09)",  text: "#7fffd4" },
+  { border: "rgba(61,142,245,0.30)", bg: "rgba(61,142,245,0.09)", text: "#90b8ff" },
+  { border: "rgba(255,190,61,0.28)", bg: "rgba(255,190,61,0.08)", text: "#ffd570" },
+  { border: "rgba(192,132,252,0.30)",bg: "rgba(192,132,252,0.09)",text: "#d8a8ff" },
+] as const;
+
+function ChipStrip({ tags, borderColor }: { tags: VibeTag[]; borderColor: string }) {
+  return (
+    <div className={`flex gap-[6px] px-[13px] py-[8px] bg-surface border-x border-b rounded-b-[14px] mb-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${borderColor}`}>
+      {tags.map((t, i) => {
+        const p = CHIP_PALETTES[i % CHIP_PALETTES.length];
+        return (
+          <span key={t.label} className="shrink-0 rounded-full px-2.5 py-[4px] text-[10.5px] font-semibold whitespace-nowrap"
+            style={{ border: `1px solid ${p.border}`, background: p.bg, color: p.text }}>
+            {t.emoji} {t.label}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function ShortlistRow({ place, rank, isLeader, isVoted, votePercent, pinnedBy, members, memberTravel, images, vibeTags, autoplay = false, onVote, onUnpin, style }: Props) {
+  const hasTravel = !!memberTravel && memberTravel.length > 0;
+  const hasChips = !!vibeTags && vibeTags.length > 0;
+  const hasCarousel = !!images && images.length > 1;
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  useEffect(() => {
+    if (!autoplay || !images || images.length <= 1) return;
+    const id = window.setInterval(() => setActiveIdx((i) => (i + 1) % images.length), 2500);
+    return () => window.clearInterval(id);
+  }, [autoplay, images?.length]);
+
+  const borderColor = isLeader ? "border-accent/[0.28]" : "border-white/[0.07]";
+
   return (
     <div style={style} className="animate-slide-up">
       <div
-        className={`flex items-center gap-[11px] px-[13px] py-[10px] bg-surface rounded-t-[14px] border-x border-t ${
-          isLeader ? "border-accent/[0.28]" : "border-white/[0.07]"
-        } ${memberTravel && memberTravel.length > 0 ? "" : "rounded-b-[14px] border-b mb-1"}`}
+        className={`flex items-center gap-[11px] px-[13px] py-[10px] bg-surface rounded-t-[14px] border-x border-t ${borderColor} ${
+          !hasCarousel && !hasTravel && !hasChips ? "rounded-b-[14px] border-b mb-1" : ""
+        }`}
       >
         <div className="w-11 h-11 rounded-[11px] overflow-hidden flex-shrink-0 bg-surface-2 relative">
-          <img src={place.imageUrl} alt={place.name} className="w-full h-full object-cover brightness-75" />
+          <img src={images?.[0] ?? place.imageUrl} alt={place.name} className="w-full h-full object-cover brightness-75" />
           <div
             className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-[5px] flex items-center justify-center font-syne text-[9px] font-extrabold ${
               isLeader ? "bg-accent text-black" : "bg-black/65 text-ink"
@@ -171,10 +240,17 @@ export default function ShortlistRow({ place, rank, isLeader, isVoted, votePerce
               <svg width="9" height="9" fill="none" viewBox="0 0 10 10">
                 <path d="M5 1C3.34 1 2 2.34 2 4c0 2.5 3 5.5 3 5.5S8 6.5 8 4c0-1.66-1.34-3-3-3z" stroke="currentColor" strokeWidth="1.2" />
               </svg>
-              {place.distance}
+              {place.area ?? place.distance}
             </span>
             <div className="w-[2px] h-[2px] rounded-full bg-muted" />
-            <span className="text-[11px] text-muted">{place.type} · {place.rating}</span>
+            <span className="text-[11px] text-muted flex items-center gap-[3px]">
+              {place.type}
+              <div className="w-[2px] h-[2px] rounded-full bg-muted" />
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-[10px] h-[10px] text-[#ffbe3d]">
+                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+              </svg>
+              {place.rating}
+            </span>
           </div>
           <div className="flex items-center gap-1 mt-[2px]">
             <Avatar initial={pinnedBy.initial} color={pinnedBy.color} textColor={pinnedBy.textColor} size={13} isFirst />
@@ -211,11 +287,17 @@ export default function ShortlistRow({ place, rank, isLeader, isVoted, votePerce
         </div>
       </div>
 
-      {memberTravel && memberTravel.length > 0 && (
-        <div className={`bg-surface border-x border-b rounded-b-[14px] mb-1 ${isLeader ? "border-accent/[0.28]" : "border-white/[0.07]"}`}>
-          <TravelStrip memberTravel={memberTravel} members={members} />
+      {hasCarousel && (
+        <PhotoStrip images={images!} activeIdx={activeIdx} onSelect={setActiveIdx}
+          borderColor={borderColor} isLast={!hasTravel && !hasChips} autoplay={autoplay}
+        />
+      )}
+      {hasTravel && (
+        <div className={`bg-surface border-x ${!hasChips ? "border-b rounded-b-[14px] mb-1" : ""} ${borderColor}`}>
+          <TravelStrip memberTravel={memberTravel!} members={members} />
         </div>
       )}
+      {hasChips && <ChipStrip tags={vibeTags!} borderColor={borderColor} />}
 
       <div className="h-[3px] bg-surface-2 rounded-[2px] overflow-hidden mx-[13px] mb-1">
         <div

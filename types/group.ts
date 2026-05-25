@@ -18,6 +18,7 @@ export type Place = {
   distance: string;
   rating: string;
   imageUrl: string;
+  area?: string;
   coordinates?: Coordinates;
 };
 
