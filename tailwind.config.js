@@ -27,6 +27,7 @@ module.exports = {
         blink: "blink 1.4s ease-in-out infinite",
         "badge-pop": "badgePop 0.3s cubic-bezier(0.34,1.56,0.64,1)",
         "slide-up": "slideUp 0.3s cubic-bezier(0.16,1,0.3,1) both",
+        "chip-pop": "chipPop 0.25s cubic-bezier(0.16,1,0.3,1) both",
       },
       keyframes: {
         blink: { "0%,100%": { opacity: "1" }, "50%": { opacity: "0.3" } },
@@ -34,6 +35,10 @@ module.exports = {
         slideUp: {
           from: { opacity: "0", transform: "translateY(12px)" },
           to:   { opacity: "1", transform: "translateY(0)" },
+        },
+        chipPop: {
+          from: { opacity: "0", transform: "scale(0.86)" },
+          to:   { opacity: "1", transform: "scale(1)" },
         },
       },
     },
