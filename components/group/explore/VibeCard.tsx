@@ -43,6 +43,13 @@ const SPEED_TEXT: Record<Speed, string> = {
 };
 
 const AUTO_ADVANCE_MS = 2600;
+
+const VIBE_CHIP_PALETTES = [
+  { border: "rgba(0,229,160,0.30)",  bg: "rgba(0,229,160,0.09)",  text: "#7fffd4" },
+  { border: "rgba(61,142,245,0.30)", bg: "rgba(61,142,245,0.09)", text: "#90b8ff" },
+  { border: "rgba(255,190,61,0.28)", bg: "rgba(255,190,61,0.08)", text: "#ffd570" },
+  { border: "rgba(192,132,252,0.30)",bg: "rgba(192,132,252,0.09)",text: "#d8a8ff" },
+] as const;
 const VISIBILITY_THRESHOLD = 0.6;
 
 type Props = {
@@ -247,9 +254,15 @@ export function VibeCard({ result, images, members, isPinned, animDelay, onPin, 
 
       {vibeTags.length > 0 && (
         <div className="flex flex-wrap gap-[6px] px-4 py-2">
-          {vibeTags.map((t) => (
-            <span key={t.label} className="rounded-full border border-white/[0.08] bg-[#1c1c22] px-2.5 py-[5px] text-[11px] text-[#b0b0bf]">{t.emoji} {t.label}</span>
-          ))}
+          {vibeTags.map((t, i) => {
+            const p = VIBE_CHIP_PALETTES[i % VIBE_CHIP_PALETTES.length];
+            return (
+              <span key={t.label} className="rounded-full px-2.5 py-[5px] text-[11px] font-semibold"
+                style={{ border: `1px solid ${p.border}`, background: p.bg, color: p.text }}>
+                {t.emoji} {t.label}
+              </span>
+            );
+          })}
         </div>
       )}
       <div className="flex items-center justify-between gap-3 px-4 pt-3">
