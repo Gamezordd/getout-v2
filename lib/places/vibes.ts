@@ -51,7 +51,7 @@ async function fetchPlaceDetails(placeId: string): Promise<PlaceDetails | null> 
       const rating = typeof r.rating === "number" ? r.rating : undefined;
       return text.trim().length > 0 ? { text: text.trim(), rating } : null;
     })
-    .filter((r): r is ReviewSnippet => r !== null)
+    .filter((r: ReviewSnippet | null): r is ReviewSnippet => r !== null)
     .slice(0, 5);
 
   return { editorialSummary, reviews };
