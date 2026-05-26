@@ -251,6 +251,15 @@ export default function ShortlistRow({ place, rank, isLeader, isVoted, votePerce
               </svg>
               {place.rating}
             </span>
+            {place.openNow !== undefined && (
+              <span className={`text-[10px] font-semibold px-[6px] py-[2px] rounded-[6px] ${
+                place.openNow
+                  ? "bg-accent/10 border border-accent/25 text-accent"
+                  : "bg-white/[0.04] border border-white/[0.08] text-muted"
+              }`}>
+                {place.openNow ? "Open" : "Closed"}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1 mt-[2px]">
             <Avatar initial={pinnedBy.initial} color={pinnedBy.color} textColor={pinnedBy.textColor} size={13} isFirst />

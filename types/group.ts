@@ -20,6 +20,7 @@ export type Place = {
   imageUrl: string;
   area?: string;
   coordinates?: Coordinates;
+  openNow?: boolean;
 };
 
 export type PinnedPlace = {
