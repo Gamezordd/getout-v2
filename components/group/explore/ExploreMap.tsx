@@ -44,8 +44,14 @@ function createMarkerEl(
   isPinned: boolean,
   isSelected: boolean,
 ): HTMLElement {
-  const wrapper = document.createElement("div");
-  wrapper.style.cssText = "display:flex;flex-direction:column;align-items:center;cursor:pointer;transform-origin:bottom center;transition:transform .12s;";
+  // root has no transition — Mapbox sets style.transform on this element to position it,
+  // so any CSS transition here would make markers lag behind the map during pan/zoom.
+  const root = document.createElement("div");
+  root.style.cssText = "display:flex;flex-direction:column;align-items:center;cursor:pointer;";
+
+  // inner carries the hover scale transition, isolated from Mapbox's positioning transform
+  const inner = document.createElement("div");
+  inner.style.cssText = "display:flex;flex-direction:column;align-items:center;transform-origin:bottom center;transition:transform .12s;";
 
   const pill = document.createElement("div");
   pill.style.cssText = `
@@ -94,10 +100,11 @@ function createMarkerEl(
     isPinned ? "#ffbe3d" : isSelected ? "#00e5a0" : "#5a5a70"
   };`;
 
-  wrapper.append(pill, tail);
-  wrapper.addEventListener("mouseenter", () => { wrapper.style.transform = "scale(1.05)"; });
-  wrapper.addEventListener("mouseleave", () => { wrapper.style.transform = ""; });
-  return wrapper;
+  inner.append(pill, tail);
+  root.append(inner);
+  root.addEventListener("mouseenter", () => { inner.style.transform = "scale(1.05)"; });
+  root.addEventListener("mouseleave", () => { inner.style.transform = ""; });
+  return root;
 }
 
 function createCentroidEl(): HTMLElement {
