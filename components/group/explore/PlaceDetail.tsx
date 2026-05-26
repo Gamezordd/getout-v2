@@ -204,16 +204,13 @@ const PlaceDetail = observer(function PlaceDetail({
             <div className="px-[14px] pt-[4px] pb-[14px]">
               <button
                 onClick={() => onPin(place.id)}
-                className="w-full py-[11px] rounded-[14px] font-syne text-[14px] font-extrabold flex items-center justify-center gap-[7px] transition-[filter] active:brightness-75"
-                style={isPinned
-                  ? {
-                      background: "rgba(255,190,61,.12)",
-                      border: "1px solid rgba(255,190,61,.28)",
-                      color: "var(--warn)",
-                    }
-                  : { background: "var(--accent)", color: "#000" }}
+                className={`w-full py-[11px] rounded-[14px] font-syne text-[14px] font-extrabold flex items-center justify-center gap-[7px] transition-[filter] active:brightness-75 ${
+                  isPinned
+                    ? "bg-warn/10 border border-warn/30 text-warn"
+                    : "bg-accent text-bg"
+                }`}
               >
-                <svg width="13" height="13" fill="none" viewBox="0 0 14 14"><path d="M7 1l1.3 4h4.2l-3.4 2.5 1.3 4L7 9.1 3.6 11.5l1.3-4L1.5 5H5.7z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" fill="currentColor"/></svg>
                 {isPinned ? "Pinned ✓" : "Pin to Shortlist"}
               </button>
             </div>

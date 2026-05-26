@@ -267,7 +267,8 @@ export async function searchMapPlaces(params: {
     const name = place.displayName?.text ?? "";
     const placeId = place.id;
     if (!placeId || !isPlaceNameAllowed(params.category, name)) continue;
-    if (typeof place.rating === "number" && place.rating < MAP_MIN_RATING) continue;
+    if (typeof place.rating !== "number") continue;
+    if (place.rating < MAP_MIN_RATING) continue;
     if (typeof place.userRatingCount === "number" && place.userRatingCount < MAP_MIN_REVIEW_COUNT) continue;
     if (!collectedPlaces.has(placeId)) {
       collectedPlaces.set(placeId, place);
