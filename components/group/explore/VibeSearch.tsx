@@ -21,7 +21,6 @@ type PlaceImagesReadyPayload = {
   updates: Array<{ placeId: string; photos: PlacePhoto[] }>;
 };
 
-const WAVE_DELAYS = [0, 120, 240, 360, 480];
 
 export default function VibeSearch({ groupId, cityKey, category, members, pinnedIds, onPin, onScroll }: Props) {
   const [query, setQuery] = useState("");
@@ -201,29 +200,19 @@ export default function VibeSearch({ groupId, cityKey, category, members, pinned
 
       {/* Animated input */}
       <div className={`relative ${loading ? "vibe-searching" : ""}`}>
-        <div className="vibe-border-layer" />
+        <div className="vibe-border-aurora" />
+        <div className="vibe-border-spark-1" />
+        <div className="vibe-border-spark-2" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Try cozy, dimly lit, live music..."
           autoComplete="off"
           spellCheck={false}
-          className="w-full bg-surface-2 border border-transparent rounded-[18px] px-4 py-[11px] text-[14px] text-ink placeholder:text-[#5a5a70] focus:outline-none relative z-10"
+          className="w-full bg-surface-2 border border-white/[0.07] rounded-[18px] px-4 py-[11px] text-[14px] text-ink placeholder:text-[#5a5a70] focus:outline-none relative z-10"
         />
       </div>
 
-      {/* Wave loader */}
-      {loading && (
-        <div className="flex items-center gap-[5px] px-1 h-5">
-          {WAVE_DELAYS.map((delay, i) => (
-            <div
-              key={i}
-              className="w-[3px] h-[14px] rounded-full bg-accent/60"
-              style={{ animation: "vsWave 0.9s ease-in-out infinite", animationDelay: `${delay}ms` }}
-            />
-          ))}
-        </div>
-      )}
 
       {/* Error */}
       {error && <p className="text-[12px] text-rose-300 px-1">{error}</p>}
