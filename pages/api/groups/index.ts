@@ -37,8 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const browserId = getOrCreateBrowserId(req, res);
     const group = await createGroup(category as Category);
-    const slug = await createSlugForGroup(group.id);
-    const member = await joinGroup(group.id, browserId);
+    const [slug, member] = await Promise.all([
+      createSlugForGroup(group.id),
+      joinGroup(group.id, browserId),
+    ]);
     const approximateLocation = await resolveApproximateLocation(req);
     console.log("Approximate location for new group:", approximateLocation);
     if (approximateLocation) {

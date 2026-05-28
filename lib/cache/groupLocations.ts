@@ -98,7 +98,9 @@ export async function saveGroupPreciseLocation(params: {
   preciseLocations.push(nextLocation);
 
   const centroidCoordinates = averageCoordinates(preciseLocations);
-  const centroidGeocode = await reverseGeocodeCoordinates(centroidCoordinates);
+  const centroidGeocode = preciseLocations.length === 1
+    ? geocodedLocation
+    : await reverseGeocodeCoordinates(centroidCoordinates);
 
   const nextState: GroupLocationState = {
     centroid: {
