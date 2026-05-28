@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Avatar from "@/components/ui/Avatar";
+import NoteStrip from "./NoteStrip";
 import type { GroupMember, Place } from "@/types/group";
 import type { MemberTravel } from "@/types/travel";
 import type { VibeTag } from "@/types/explore";
@@ -15,9 +16,11 @@ type Props = {
   memberTravel?: MemberTravel[];
   images?: string[];
   vibeTags?: VibeTag[];
+  note?: string;
   autoplay?: boolean;
   onVote: () => void;
   onUnpin: () => void;
+  onNoteChange: (note: string) => void;
   style?: React.CSSProperties;
 };
 
@@ -149,9 +152,9 @@ function TravelChipItem({ chip }: { chip: TravelChip }) {
   );
 }
 
-function PhotoStrip({ images, activeIdx, onSelect, borderColor, isLast, autoplay }: {
+function PhotoStrip({ images, activeIdx, onSelect, borderColor, autoplay }: {
   images: string[]; activeIdx: number; onSelect: (i: number) => void;
-  borderColor: string; isLast: boolean; autoplay: boolean;
+  borderColor: string; autoplay: boolean;
 }) {
   const stripRef = useRef<HTMLDivElement>(null);
   const btnRefs = useRef<Record<number, HTMLButtonElement | null>>({});
@@ -166,7 +169,7 @@ function PhotoStrip({ images, activeIdx, onSelect, borderColor, isLast, autoplay
   }, [activeIdx, autoplay]);
 
   return (
-    <div ref={stripRef} className={`flex gap-2 overflow-x-auto bg-surface border-x px-3 pt-2 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${borderColor} ${isLast ? "border-b rounded-b-[14px] mb-1" : ""}`}>
+    <div ref={stripRef} className={`flex gap-2 overflow-x-auto bg-surface border-x px-3 pt-2 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${borderColor}`}>
       {images.map((url, i) => (
         <button key={i} type="button" ref={(el) => { btnRefs.current[i] = el; }} onClick={() => onSelect(i)}
           className={`shrink-0 h-[88px] w-[120px] rounded-[10px] overflow-hidden border-2 transition-colors ${autoplay && i === activeIdx ? "border-accent" : "border-transparent"}`}
@@ -187,7 +190,7 @@ const CHIP_PALETTES = [
 
 function ChipStrip({ tags, borderColor }: { tags: VibeTag[]; borderColor: string }) {
   return (
-    <div className={`flex gap-[6px] px-[13px] py-[8px] bg-surface border-x border-b rounded-b-[14px] mb-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${borderColor}`}>
+    <div className={`flex gap-[6px] px-[13px] py-[8px] bg-surface border-x overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${borderColor}`}>
       {tags.map((t, i) => {
         const p = CHIP_PALETTES[i % CHIP_PALETTES.length];
         return (
@@ -201,7 +204,7 @@ function ChipStrip({ tags, borderColor }: { tags: VibeTag[]; borderColor: string
   );
 }
 
-export default function ShortlistRow({ place, rank, isLeader, isVoted, votePercent, pinnedBy, members, memberTravel, images, vibeTags, autoplay = false, onVote, onUnpin, style }: Props) {
+export default function ShortlistRow({ place, rank, isLeader, isVoted, votePercent, pinnedBy, members, memberTravel, images, vibeTags, note, autoplay = false, onVote, onUnpin, onNoteChange, style }: Props) {
   const hasTravel = !!memberTravel && memberTravel.length > 0;
   const hasChips = !!vibeTags && vibeTags.length > 0;
   const hasCarousel = !!images && images.length > 1;
@@ -218,9 +221,7 @@ export default function ShortlistRow({ place, rank, isLeader, isVoted, votePerce
   return (
     <div style={style} className="animate-slide-up">
       <div
-        className={`flex items-center gap-[11px] px-[13px] py-[10px] bg-surface rounded-t-[14px] border-x border-t ${borderColor} ${
-          !hasCarousel && !hasTravel && !hasChips ? "rounded-b-[14px] border-b mb-1" : ""
-        }`}
+        className={`flex items-center gap-[11px] px-[13px] py-[10px] bg-surface rounded-t-[14px] border-x border-t ${borderColor}`}
       >
         <div className="w-11 h-11 rounded-[11px] overflow-hidden flex-shrink-0 bg-surface-2 relative">
           <img src={images?.[0] ?? place.imageUrl} alt={place.name} className="w-full h-full object-cover brightness-75" />
@@ -298,15 +299,16 @@ export default function ShortlistRow({ place, rank, isLeader, isVoted, votePerce
 
       {hasCarousel && (
         <PhotoStrip images={images!} activeIdx={activeIdx} onSelect={setActiveIdx}
-          borderColor={borderColor} isLast={!hasTravel && !hasChips} autoplay={autoplay}
+          borderColor={borderColor} autoplay={autoplay}
         />
       )}
       {hasTravel && (
-        <div className={`bg-surface border-x ${!hasChips ? "border-b rounded-b-[14px] mb-1" : ""} ${borderColor}`}>
+        <div className={`bg-surface border-x ${borderColor}`}>
           <TravelStrip memberTravel={memberTravel!} members={members} />
         </div>
       )}
       {hasChips && <ChipStrip tags={vibeTags!} borderColor={borderColor} />}
+      <NoteStrip note={note} borderColor={borderColor} onSave={onNoteChange} />
 
       <div className="h-[3px] bg-surface-2 rounded-[2px] overflow-hidden mx-[13px] mb-1">
         <div

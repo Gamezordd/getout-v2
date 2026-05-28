@@ -176,6 +176,21 @@ export default function ShortlistPage({
     }
   }
 
+  async function handleNoteChange(placeId: string, note: string) {
+    setPinned((current) =>
+      current.map((p) => p.place.id === placeId ? { ...p, note: note || undefined } : p)
+    );
+    try {
+      await fetch(`/api/groups/${session.id}/pins`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ placeId, note }),
+      });
+    } catch {
+      // note save failed silently
+    }
+  }
+
   async function handleUnpin(placeId: string) {
     const item = pinned.find((p) => p.place.id === placeId);
     try {
@@ -230,7 +245,7 @@ export default function ShortlistPage({
         <EmptyState />
       ) : (
         <div
-          className="flex-1 overflow-y-auto px-[14px] pt-1 pb-[120px]"
+          className="flex-1 overflow-y-auto px-[14px] pt-1 pb-[200px]"
           onScroll={(event) => {
             const nextScrollY = event.currentTarget.scrollTop;
             onScroll?.(nextScrollY > lastScrollY.current && nextScrollY > 10);
@@ -261,8 +276,10 @@ export default function ShortlistPage({
               memberTravel={item.memberTravel}
               images={imagesByPlaceId.get(item.place.id)}
               vibeTags={vibesByPlaceId.get(item.place.id)}
+              note={item.note}
               onVote={() => handleVote(item.place.id)}
               onUnpin={() => handleUnpin(item.place.id)}
+              onNoteChange={(note) => handleNoteChange(item.place.id, note)}
               style={{ animationDelay: `${(item.rank - 1) * 0.07}s` }}
             />
           ))}

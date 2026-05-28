@@ -10,9 +10,11 @@ import ExplorePage from "@/components/group/explore/ExplorePage";
 import { toast } from "sonner";
 import { CATEGORY_META } from "@/lib/demoPlaces";
 import { capturePreciseLocation, getStoredPreciseLocation } from "@/lib/location/browser";
+import { getPusherClient } from "@/lib/pusher/client";
+import { groupChannel, EVENTS } from "@/lib/pusher/events";
 import type { MemberPublic } from "@/lib/db/members";
 import type { Category, GroupMember, GroupSession } from "@/types/group";
-import type { Coordinates, GroupLocationState } from "@/types/location";
+import type { Coordinates, GroupCentroid, GroupLocationState } from "@/types/location";
 
 type Props = {
   groupId: string;
@@ -74,6 +76,25 @@ export default function GroupSlugPage({
       })
       .catch(() => undefined);
   }, [groupId, initialIsMember]);
+
+  useEffect(() => {
+    let channel: ReturnType<ReturnType<typeof getPusherClient>["subscribe"]> | null = null;
+    try {
+      const pusher = getPusherClient();
+      channel = pusher.subscribe(groupChannel(groupId));
+      channel.bind(EVENTS.CENTROID_UPDATED, (payload: { centroid: GroupCentroid }) => {
+        setLocationState((prev) => ({ ...prev, centroid: payload.centroid }));
+      });
+    } catch {
+      // Pusher not configured
+    }
+    return () => {
+      if (channel) {
+        channel.unbind(EVENTS.CENTROID_UPDATED);
+        channel.unsubscribe();
+      }
+    };
+  }, [groupId]);
 
   async function handlePreciseLocationUpdate() {
     if (updatingLocation) return;

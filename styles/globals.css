@@ -35,22 +35,6 @@
   inset: 0;
   border-radius: 18px;
   padding: 1.5px;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 229, 160, 0.3) 0%,
-    rgba(0, 229, 160, 0.06) 45%,
-    rgba(61, 142, 245, 0.1) 70%,
-    rgba(0, 229, 160, 0.3) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-
-.vibe-searching .vibe-border-layer {
   background: conic-gradient(
     from var(--vangle, 0deg),
     #00e5a0 0%,
@@ -59,5 +43,16 @@
     rgba(61, 142, 245, 0.08) 75%,
     #00e5a0 100%
   );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.vibe-searching .vibe-border-layer {
+  opacity: 1;
   animation: vbSpin 2s linear infinite;
 }

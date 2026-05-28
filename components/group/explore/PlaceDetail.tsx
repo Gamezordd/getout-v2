@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import type { ExploreStore } from "@/stores/ExploreStore";
 import type { GroupSession } from "@/types/group";
@@ -27,10 +27,15 @@ const PlaceDetail = observer(function PlaceDetail({
   const place = store.selectedPlace;
   const [photoIndex, setPhotoIndex] = useState(0);
   const show = place !== null;
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [optimisticPinned, setOptimisticPinned] = useState(false);
+  const startYRef = useRef(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setPhotoIndex(0);
-  }, [place?.id]);
+  useEffect(() => { setPhotoIndex(0); setOptimisticPinned(false); }, [place?.id]);
+
+  useEffect(() => { if (!show) setDragY(0); }, [show]);
 
   useEffect(() => {
     if (!place) return;
@@ -49,12 +54,8 @@ const PlaceDetail = observer(function PlaceDetail({
           body: JSON.stringify({ placeIds: [placeId] }),
         });
         if (cancelled) return;
-
-        const payload = (await response.json()) as {
-          data?: PlaceImagesPayload;
-        };
+        const payload = (await response.json()) as { data?: PlaceImagesPayload };
         if (!payload.data || cancelled) return;
-
         store.applyImagesPayload(payload.data);
         if (payload.data[placeId] === "loading") {
           retryTimer = window.setTimeout(loadImages, 3000);
@@ -63,12 +64,9 @@ const PlaceDetail = observer(function PlaceDetail({
     }
 
     loadImages();
-
     return () => {
       cancelled = true;
-      if (retryTimer !== null) {
-        window.clearTimeout(retryTimer);
-      }
+      if (retryTimer !== null) window.clearTimeout(retryTimer);
     };
   }, [place, session.id, store]);
 
@@ -76,25 +74,71 @@ const PlaceDetail = observer(function PlaceDetail({
   const photos = Array.isArray(rawImages) ? rawImages : [];
   const imagesLoading = rawImages === "loading";
   const currentCredit = photos[photoIndex]?.credit ?? null;
-  const isPinned = place ? pinnedIds.has(place.id) : false;
+  const isPinned = place ? (pinnedIds.has(place.id) || optimisticPinned) : false;
 
   function slide(direction: number) {
-    setPhotoIndex((index) => (index + direction + photos.length) % Math.max(1, photos.length));
+    setPhotoIndex((i) => (i + direction + photos.length) % Math.max(1, photos.length));
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    startYRef.current = e.clientY;
+    setIsDragging(true);
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!isDragging) return;
+    setDragY(Math.max(0, e.clientY - startYRef.current));
+  }
+
+  function onPointerUp() {
+    if (!isDragging) return;
+    setIsDragging(false);
+    const threshold = sheetRef.current ? sheetRef.current.offsetHeight * 0.28 : 90;
+    if (dragY > threshold) {
+      onClose();
+    } else {
+      setDragY(0);
+    }
   }
 
   return (
-    <div
-      className="absolute bottom-0 left-0 right-0 px-[10px] pb-[14px] pointer-events-none"
-      style={{
-        transform: show ? "translateY(0)" : "translateY(110%)",
-        transition: "transform 0.32s cubic-bezier(0.16,1,0.3,1)",
-        pointerEvents: show ? "all" : "none",
-      }}
-    >
-      <div className="bg-surface border border-[rgba(255,255,255,.13)] rounded-[20px] overflow-hidden shadow-[0_-4px_32px_rgba(0,0,0,.5)]">
-        <div className="w-8 h-[3px] rounded-[2px] bg-surface-3 mx-auto mt-[10px]" />
+    <>
+      {/* Backdrop — tap to close */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "rgba(0,0,0,0.22)",
+          opacity: show ? 1 : 0,
+          transition: "opacity 0.28s ease",
+          pointerEvents: show ? "all" : "none",
+        }}
+        onClick={onClose}
+      />
 
-        <div className="h-[160px] relative overflow-hidden mt-[10px]">
+      {/* Bottom sheet */}
+      <div
+        ref={sheetRef}
+        className="absolute bottom-0 left-0 right-0 bg-surface border-t border-white/[0.1] rounded-t-[22px] shadow-[0_-8px_40px_rgba(0,0,0,.6)] overflow-hidden"
+        style={{
+          transform: show ? `translateY(${dragY}px)` : "translateY(110%)",
+          transition: isDragging ? "none" : "transform 0.32s cubic-bezier(0.16,1,0.3,1)",
+          pointerEvents: show ? "all" : "none",
+        }}
+      >
+        {/* Drag handle */}
+        <div
+          className="flex items-center justify-center py-[10px] cursor-grab active:cursor-grabbing touch-none select-none"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        >
+          <div className="w-9 h-[4px] rounded-full bg-white/20" />
+        </div>
+
+        {/* Photo strip */}
+        <div className="h-[160px] relative overflow-hidden">
           {imagesLoading && (
             <div className="absolute inset-0 bg-surface-2 flex items-center justify-center">
               <div className="w-5 h-5 border-2 border-muted border-t-accent rounded-full animate-spin" />
@@ -112,8 +156,8 @@ const PlaceDetail = observer(function PlaceDetail({
                   transition: "transform .3s cubic-bezier(.16,1,.3,1)",
                 }}
               >
-                {photos.map((photo, index) => (
-                  <div key={index} className="flex-shrink-0 w-full h-full">
+                {photos.map((photo, i) => (
+                  <div key={i} className="flex-shrink-0 w-full h-full">
                     <img src={photo.url} className="w-full h-full object-cover brightness-[.78]" alt="" />
                   </div>
                 ))}
@@ -121,20 +165,16 @@ const PlaceDetail = observer(function PlaceDetail({
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[rgba(10,10,13,.85)] pointer-events-none" />
               {photos.length > 1 && (
                 <>
-                  <button onClick={() => slide(-1)} className="absolute left-[9px] top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 text-[11px]">
-                    ‹
-                  </button>
-                  <button onClick={() => slide(1)} className="absolute right-[9px] top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 text-[11px]">
-                    ›
-                  </button>
+                  <button onClick={() => slide(-1)} className="absolute left-[9px] top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 text-[11px]">‹</button>
+                  <button onClick={() => slide(1)} className="absolute right-[9px] top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 text-[11px]">›</button>
                   <div className="absolute bottom-[9px] left-1/2 -translate-x-1/2 flex gap-1">
-                    {photos.map((_, index) => (
-                      <div key={index} className="h-[5px] rounded-full transition-all duration-200" style={{ width: index === photoIndex ? 14 : 5, background: index === photoIndex ? "rgba(255,255,255,.9)" : "rgba(255,255,255,.35)" }} />
+                    {photos.map((_, i) => (
+                      <div key={i} className="h-[5px] rounded-full transition-all duration-200" style={{ width: i === photoIndex ? 14 : 5, background: i === photoIndex ? "rgba(255,255,255,.9)" : "rgba(255,255,255,.35)" }} />
                     ))}
                   </div>
                 </>
               )}
-              <div className="absolute top-[9px] left-[9px] bg-black/50 backdrop-blur-md border border-white/10 px-2 py-[3px] rounded-full flex items-center gap-1">
+              <div className="absolute top-[9px] left-[9px] bg-black/50 backdrop-blur-md border border-white/10 px-2 py-[3px] rounded-full">
                 <span className="text-[10px] font-semibold text-white/75">{photos.length} photos</span>
               </div>
               {currentCredit && (
@@ -152,12 +192,9 @@ const PlaceDetail = observer(function PlaceDetail({
         {place && (
           <>
             <div className="px-[14px] pt-[12px]">
-              {/* Name + price badge */}
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
-                  <div className="font-syne text-[17px] font-extrabold tracking-tight leading-tight">
-                    {place.name}
-                  </div>
+                  <div className="font-syne text-[17px] font-extrabold tracking-tight leading-tight">{place.name}</div>
                   <div className="text-[12px] text-muted mt-[3px]">{place.type}</div>
                 </div>
                 <div className="flex flex-col items-end gap-[5px] flex-shrink-0">
@@ -178,14 +215,10 @@ const PlaceDetail = observer(function PlaceDetail({
                 </div>
               </div>
 
-              {/* Editorial description */}
               {place.description && (
-                <p className="mt-[8px] text-[12px] text-muted leading-[1.55] line-clamp-2">
-                  {place.description}
-                </p>
+                <p className="mt-[8px] text-[12px] text-muted leading-[1.55] line-clamp-2">{place.description}</p>
               )}
 
-              {/* Meta row: rating · reviews · distance */}
               <div className="mt-[10px] flex items-center gap-[6px] flex-wrap text-[12px] text-muted">
                 <span className="text-warn">★</span>
                 <span className="text-ink font-semibold">{place.rating}</span>
@@ -203,7 +236,7 @@ const PlaceDetail = observer(function PlaceDetail({
 
             <div className="px-[14px] pt-[4px] pb-[14px]">
               <button
-                onClick={() => onPin(place.id)}
+                onClick={() => { setOptimisticPinned(true); onPin(place.id); }}
                 className={`w-full py-[11px] rounded-[14px] font-syne text-[14px] font-extrabold flex items-center justify-center gap-[7px] transition-[filter] active:brightness-75 ${
                   isPinned
                     ? "bg-warn/10 border border-warn/30 text-warn"
@@ -217,7 +250,7 @@ const PlaceDetail = observer(function PlaceDetail({
           </>
         )}
       </div>
-    </div>
+    </>
   );
 });
 

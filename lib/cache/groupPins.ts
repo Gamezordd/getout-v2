@@ -5,6 +5,7 @@ type PinnedEntry = {
   place: Place;
   pinnedBy: GroupMember;
   pinnedAt: string;
+  note?: string;
 };
 
 const GROUP_PINS_PREFIX = "group-pins:";
@@ -50,4 +51,18 @@ export async function removeGroupPin(
 export async function clearGroupPins(groupId: string): Promise<void> {
   const redis = getRedis();
   await redis.del(getPinsKey(groupId));
+}
+
+export async function updateGroupPinNote(
+  groupId: string,
+  placeId: string,
+  note: string,
+): Promise<PinnedEntry[]> {
+  const current = await getGroupPins(groupId);
+  const next = current.map((p) =>
+    p.place.id === placeId ? { ...p, note: note || undefined } : p
+  );
+  const redis = getRedis();
+  await redis.set(getPinsKey(groupId), next);
+  return next;
 }

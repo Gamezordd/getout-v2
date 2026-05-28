@@ -8,4 +8,5 @@ export const EVENTS = {
   PINS_UPDATED: "pins-updated",
   PLACE_IMAGES_READY: "place-images-ready",
   PLACE_VIBES_READY: "place-vibes-ready",
+  CENTROID_UPDATED: "centroid-updated",
 } as const;

@@ -27,8 +27,11 @@ type PlaceImagesReadyPayload = {
   updates: Array<{ placeId: string; photos: PlacePhoto[] }>;
 };
 
+const VIBE_SEARCH_CITIES = ["bengaluru", "bangalore"];
+
 const ExplorePage = observer(function ExplorePage({ session, centroid, category, cityKey, pinnedIds, onPin, onScroll }: Props) {
   const store = useMemo(() => new ExploreStore(), []);
+  const hasVibeSearch = VIBE_SEARCH_CITIES.includes(cityKey.toLowerCase());
   const [mode, setMode] = useState<"map" | "vibe">("map");
   const onScrollRef = useRef(onScroll);
   onScrollRef.current = onScroll;
@@ -97,27 +100,29 @@ const ExplorePage = observer(function ExplorePage({ session, centroid, category,
 
   return (
     <div className="flex-1 relative overflow-hidden">
-      {/* Toggle — floated over the content */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex bg-surface-2 rounded-[10px] p-[3px] gap-[2px]"
-        style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
-      >
-        {(["map", "vibe"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setMode(tab)}
-            className="flex items-center gap-[5px] px-[14px] py-[6px] rounded-[8px] text-[12.5px] font-semibold transition-all"
-            style={mode === tab
-              ? { background: "#22222a", color: "#f0f0f5", boxShadow: "0 1px 4px rgba(0,0,0,.3)" }
-              : { color: "#5a5a70" }}
-          >
-            {tab === "map" ? (
-              <><svg width="13" height="13" fill="none" viewBox="0 0 14 14"><path d="M1 3l4 2 4-2 4 2v8l-4-2-4 2-4-2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>Map</>
-            ) : (
-              <><svg width="13" height="13" fill="none" viewBox="0 0 14 14"><path d="M7 1l1.3 4h4.2l-3.4 2.5 1.3 4L7 9.1 3.6 11.5l1.3-4L1.5 5H5.7z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>Vibe</>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Toggle — floated over the content, only for supported cities */}
+      {hasVibeSearch && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex bg-surface-2 rounded-[10px] p-[3px] gap-[2px]"
+          style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+        >
+          {(["map", "vibe"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setMode(tab)}
+              className="flex items-center gap-[5px] px-[14px] py-[6px] rounded-[8px] text-[12.5px] font-semibold transition-all"
+              style={mode === tab
+                ? { background: "#22222a", color: "#f0f0f5", boxShadow: "0 1px 4px rgba(0,0,0,.3)" }
+                : { color: "#5a5a70" }}
+            >
+              {tab === "map" ? (
+                <><svg width="13" height="13" fill="none" viewBox="0 0 14 14"><path d="M1 3l4 2 4-2 4 2v8l-4-2-4 2-4-2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>Map</>
+              ) : (
+                <><svg width="13" height="13" fill="none" viewBox="0 0 14 14"><path d="M7 1l1.3 4h4.2l-3.4 2.5 1.3 4L7 9.1 3.6 11.5l1.3-4L1.5 5H5.7z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>Vibe</>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className={`absolute inset-0 flex flex-col ${mode !== "map" ? "hidden" : ""}`}>
         <ExploreMap
@@ -135,7 +140,7 @@ const ExplorePage = observer(function ExplorePage({ session, centroid, category,
         />
       </div>
 
-      <div className={`absolute inset-0 overflow-hidden ${mode !== "vibe" ? "hidden" : ""}`}>
+      {hasVibeSearch && <div className={`absolute inset-0 overflow-hidden ${mode !== "vibe" ? "hidden" : ""}`}>
         <VibeSearch
           groupId={session.id}
           cityKey={cityKey}
@@ -145,7 +150,7 @@ const ExplorePage = observer(function ExplorePage({ session, centroid, category,
           onPin={handleVibePin}
           onScroll={onScroll}
         />
-      </div>
+      </div>}
     </div>
   );
 });

@@ -266,6 +266,11 @@ const ExploreMap = observer(function ExploreMap({ store, groupId, centroid, pinn
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Move centroid marker when group centroid changes (no camera pan)
+  useEffect(() => {
+    centroidMarkerRef.current?.setLngLat([centroid.lng, centroid.lat]);
+  }, [centroid]);
+
   // Update markers whenever places, selection, or pins change
   const placesKey = Array.from(store.places.keys()).join(",");
   const selectedId = store.selectedPlaceId;

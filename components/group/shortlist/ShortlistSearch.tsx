@@ -61,9 +61,18 @@ export default function ShortlistSearch({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[14px] font-semibold text-ink truncate">{place.name}</div>
-                  <div className="flex items-center gap-1 text-[11px] text-muted mt-[2px]">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted mt-[2px]">
                     <span className="font-semibold text-accent">{place.distance}</span>
                     <span>- {place.type} - {place.rating}</span>
+                    {place.openNow !== undefined && (
+                      <span className={`font-semibold px-[5px] py-[1px] rounded-[5px] ${
+                        place.openNow
+                          ? "bg-accent/10 border border-accent/25 text-accent"
+                          : "bg-white/[0.04] border border-white/[0.08] text-muted"
+                      }`}>
+                        {place.openNow ? "Open" : "Closed"}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <button

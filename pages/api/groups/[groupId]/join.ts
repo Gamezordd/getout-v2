@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { joinGroup, getMembers, toPublicMember } from "@/lib/db/members";
 import { getOrCreateBrowserId } from "@/lib/cookies";
 import { saveGroupPreciseLocation } from "@/lib/cache/groupLocations";
+import { broadcastGroupEvent } from "@/lib/pusher/server";
+import { EVENTS } from "@/lib/pusher/events";
 
 type RequestBody = {
   preciseLocation?: {
@@ -35,6 +37,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           coordinates: preciseCoordinates,
         })
       : null;
+    if (locationState?.centroid) {
+      broadcastGroupEvent(groupId, EVENTS.CENTROID_UPDATED, { centroid: locationState.centroid }).catch(() => undefined);
+    }
     const members = await getMembers(groupId);
     res.status(200).json({
       data: {

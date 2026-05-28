@@ -4,6 +4,7 @@ import {
   addGroupPin,
   removeGroupPin,
   clearGroupPins,
+  updateGroupPinNote,
 } from "@/lib/cache/groupPins";
 import { getGroupTravelCache, setGroupTravelCache } from "@/lib/cache/groupTravel";
 import { getGroupLocationState } from "@/lib/cache/groupLocations";
@@ -129,6 +130,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await clearGroupPins(groupId);
       await broadcastPinsUpdated(groupId);
       return res.status(200).json({ data: [] });
+    }
+
+    if (req.method === "PATCH") {
+      const { placeId, note } = req.body as { placeId?: string; note?: string };
+      if (typeof placeId !== "string") {
+        return res.status(400).json({ error: "placeId is required" });
+      }
+      const pins = await updateGroupPinNote(groupId, placeId, note ?? "");
+      return res.status(200).json({ data: entriesToPinnedPlaces(pins) });
     }
 
     return res.status(405).end();

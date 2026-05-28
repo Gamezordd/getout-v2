@@ -29,6 +29,7 @@ export type PinnedPlace = {
   votePercent: number;
   pinnedBy: GroupMember;
   memberTravel?: MemberTravel[];
+  note?: string;
 };
 
 export type GroupSession = {

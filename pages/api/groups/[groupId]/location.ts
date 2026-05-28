@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getBrowserIdFromCookie } from "@/lib/cookies";
 import { getMemberByBrowserId } from "@/lib/db/members";
 import { saveGroupPreciseLocation } from "@/lib/cache/groupLocations";
+import { broadcastGroupEvent } from "@/lib/pusher/server";
+import { EVENTS } from "@/lib/pusher/events";
 
 type RequestBody = {
   coordinates?: {
@@ -58,6 +60,8 @@ export default async function handler(
       browserId,
       coordinates,
     });
+
+    broadcastGroupEvent(groupId, EVENTS.CENTROID_UPDATED, { centroid: locationState.centroid }).catch(() => undefined);
 
     return res.status(200).json({ data: locationState });
   } catch (error) {
